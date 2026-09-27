@@ -7,5 +7,5 @@ function requireEnv(name: string) {
 	return value;
 }
 
-// export const DATABASE_URL = requireEnv('DATABASE_URL');
+export const DATABASE_URL = requireEnv('DATABASE_URL');
 export const PORT = Number(process.env.PORT) || 3000;
