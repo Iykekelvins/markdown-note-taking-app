@@ -1,8 +1,11 @@
 import express, { type ErrorRequestHandler } from 'express';
 import { PORT } from './config.ts';
-import { checkDBConnection } from './db/index.ts';
+import { checkDBConnection, db } from './db/index.ts';
 import multer from 'multer';
 import path from 'node:path';
+import { extractTitle } from './utils/extractTitle.ts';
+import { notes } from './db/schema.ts';
+
 const app = express();
 
 app.get('/health', (_req, res) => {
@@ -17,7 +20,7 @@ const upload = multer({
 });
 const ALLOWED_EXTENSIONS = ['.md', '.markdown'];
 
-app.post('/notes', upload.single('file'), (req, res) => {
+app.post('/notes', upload.single('file'), async (req, res) => {
 	const file = req.file;
 	if (!file) {
 		return res.status(400).json({
@@ -32,15 +35,22 @@ app.post('/notes', upload.single('file'), (req, res) => {
 		});
 	}
 
-	if (file.size === 0) {
-		return res.status(400).json({
-			error: 'File is empty',
-		});
+	const content = file.buffer.toString('utf-8');
+	if (content.trim() === '') {
+		return res.status(400).json({ error: 'File is empty' });
 	}
-	res.json({
-		originalName: file.originalname,
-		mimetype: file.mimetype,
-		size: file.size,
+
+	const title = extractTitle(content);
+	const [note] = await db
+		.insert(notes)
+		.values({
+			title,
+			content,
+		})
+		.returning();
+
+	res.status(201).json({
+		note,
 	});
 });
 
