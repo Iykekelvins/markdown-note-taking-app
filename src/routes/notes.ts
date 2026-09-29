@@ -4,10 +4,10 @@ import { notes as notesTable } from '../db/schema.ts';
 import { upload } from '../middleware/upload.ts';
 import { db } from '../db/index.ts';
 import { desc, eq } from 'drizzle-orm';
-import { marked } from 'marked';
+import { validateId } from '../middleware/validateId.ts';
+import { renderMarkdown } from '../utils/renderMarkdown.ts';
 
 import path from 'node:path';
-import { validateId } from '../middleware/validateId.ts';
 
 const ALLOWED_EXTENSIONS = ['.md', '.markdown'];
 
@@ -71,7 +71,7 @@ router.get('/:id/html', validateId, async (req, res) => {
 		});
 	}
 
-	const html = await marked.parse(note.content);
+	const html = await renderMarkdown(note.content);
 	res.send(html);
 });
 
